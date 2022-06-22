@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const { notFound , errorHandler } = require('./middlewares/errorMiddlewares');
 const dbconnect = require('./dbconnect');
 const userRouter = require('./routes/user');
+const productRouter = require('./routes/product')
 
 
 const app = express();
@@ -24,6 +25,7 @@ app.use(express.static('public'));
 
 //routes
 app.use('/api/user', userRouter);
+app.use('/api/product', productRouter);
 
 
 app.get('/', (req, res) => {
