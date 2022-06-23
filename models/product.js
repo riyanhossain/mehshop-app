@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const mongoosePaginate = require("mongoose-paginate-v2");
 
 const productSchema = new mongoose.Schema(
   {
@@ -46,14 +47,20 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    fileName : {
-        type: String,
-        required: true
-    }
+    fileName: {
+      type: String,
+      required: true,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
   }
 );
+
+productSchema.plugin(mongoosePaginate);
 
 module.exports = new mongoose.model("product", productSchema);

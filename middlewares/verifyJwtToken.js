@@ -5,7 +5,6 @@ dotenv.config();
 
 const verifyJwtToken = (req, res, next) => {
   const { authorization } = req.headers;
-  console.log(req.headers);
   if (authorization) {
     const token = authorization.split(" ")[1];
     try {
