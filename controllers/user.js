@@ -3,13 +3,15 @@ const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const { generateJwtToken } = require("../utils/genateJwtToken");
 const dotenv = require("dotenv");
+const { decodeToken } = require("../utils/decodeToken");
+const user = require("../models/user");
 
 dotenv.config();
 
 const userRegister = async (req, res) => {
   try {
-    const hassPassword = await bcrypt.hash(req.body.password, 12);
-    req.body.password = hassPassword;
+    const hashPassword = await bcrypt.hash(req.body.password, 12);
+    req.body.password = hashPassword;
     const user = new userModel(req.body);
     await user.save();
     res.status(201).json({
@@ -53,10 +55,10 @@ const userLogin = async (req, res) => {
   }
 };
 
-const userResetPassword = async (req, res) => {
+const sentUserResetPasswordEmail = async (req, res) => {
   const { email } = req.body;
-  const user = await userModel.findOne({email});
-  if(user){
+  const user = await userModel.findOne({ email });
+  if (user) {
     let transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -66,7 +68,7 @@ const userResetPassword = async (req, res) => {
         pass: process.env.PASSWORD, // generated ethereal password
       },
     });
-  
+
     // send mail with defined transport object
     try {
       await transporter.sendMail({
@@ -78,17 +80,84 @@ const userResetPassword = async (req, res) => {
         )}">Click here <span> to reset your password <span> </a>`, // html body
       });
       res.status(200).json({
-          message : "Reset password email sent"
-      })
+        message: "Reset password email sent",
+      });
     } catch (err) {
       console.log(err);
     }
-    
-  }else{
+  } else {
     res.status(200).json({
-      message : "Invail email"
-    })
+      message: "Invail email",
+    });
   }
-
 };
-module.exports = { userRegister, userLogin, userResetPassword };
+
+const userResetPassword = async (req, res) => {
+  const { token, password } = req.body;
+  const decodedUserInfo = decodeToken(token);
+  const { id } = decodedUserInfo;
+  if (id) {
+    try {
+      const hashedpassword = await bcrypt.hash(password, 12);
+      const user = await userModel.findOneAndUpdate(
+        { _id: id },
+        {
+          password: hashedpassword,
+        }
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  } else {
+    res.status(401).json({
+      message: "Invalid Token",
+    });
+  }
+};
+
+const userChangePassword = async (req, res) => {
+  const { id, currentPassword, newPassword } = req.body;
+  // const { id } = req.user.id;
+  try {
+    if (currentPassword === newPassword) {
+      res.status(200).json({
+        message: "password cant be same",
+      });
+    } else {
+      const user = await userModel.findOne({ _id: id });
+      if (user) {
+        const isCurrentPasswordValid = await bcrypt.compare(
+          currentPassword,
+          user.password
+        );
+        if (isCurrentPasswordValid) {
+          const hashedpassword = await bcrypt.hash(newPassword, 12);
+          await userModel.updateOne({ _id: id }, { password: hashedpassword });
+          res.status(200).json({
+            message: "password updated sucessfully"
+          })
+        } else {
+          res.status(200).json({
+            message: "Wrong password",
+          });
+        }
+      } else {
+        res.status(500).json({
+          message: "user not found",
+        });
+      }
+    }
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+module.exports = {
+  userRegister,
+  userLogin,
+  sentUserResetPasswordEmail,
+  userResetPassword,
+  userChangePassword,
+};
