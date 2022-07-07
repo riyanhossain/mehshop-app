@@ -10,13 +10,21 @@ dotenv.config();
 
 const userRegister = async (req, res) => {
   try {
-    const hashPassword = await bcrypt.hash(req.body.password, 12);
-    req.body.password = hashPassword;
-    const user = new userModel(req.body);
-    await user.save();
-    res.status(201).json({
-      message: "user created successfully",
-    });
+    const { username, password } = req.body;
+    const isUsernameExits = await userModel.findOne({ username });
+    if (!isUsernameExits) {
+      const hashPassword = await bcrypt.hash(password, 12);
+      req.body.password = hashPassword;
+      const user = new userModel(req.body);
+      await user.save();
+      res.status(201).json({
+        message: "user created successfully",
+      });
+    } else {
+      res.status(409).json({
+        message: "username already in use",
+      });
+    }
   } catch (err) {
     res.status(500).json({
       message: err.message,
@@ -134,8 +142,8 @@ const userChangePassword = async (req, res) => {
           const hashedpassword = await bcrypt.hash(newPassword, 12);
           await userModel.updateOne({ _id: id }, { password: hashedpassword });
           res.status(200).json({
-            message: "password updated sucessfully"
-          })
+            message: "password updated sucessfully",
+          });
         } else {
           res.status(200).json({
             message: "Wrong password",
@@ -154,10 +162,41 @@ const userChangePassword = async (req, res) => {
   }
 };
 
+const userInfoUpdate = async (req, res) => {
+  const { name, username, email, phone, address,id } = req.body;
+  // const { id } = req.user.id;
+  try {
+    const isUsernameExits = await userModel.findOne({ username });
+    if (!isUsernameExits) {
+      await userModel.findOneAndUpdate(
+        { _id: id },
+        {
+          name,
+          username,
+          email,
+          phone,
+          address,
+        }
+      );
+      res.status(200).json({
+        message: "userinfo updated sucessfully",
+      });
+    } else {
+      res.status(409).json({
+        message: "username already in use",
+      });
+    }
+  } catch (err) {
+    res.status(500).json({
+      message: "server internal err",
+    });
+  }
+};
 module.exports = {
   userRegister,
   userLogin,
   sentUserResetPasswordEmail,
   userResetPassword,
   userChangePassword,
+  userInfoUpdate,
 };
