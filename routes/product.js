@@ -5,9 +5,9 @@ const { verifyJwtToken } = require('../middlewares/verifyJwtToken');
 
 const router = express.Router();
 
-router.post('/products', verifyJwtToken, imageUpload.single("pImage"), insertProduct)
+router.post('/create', verifyJwtToken, imageUpload.single("pImage"), insertProduct)
 
-router.get('/all', getAllTheProducts);
+router.get('/get-products', getAllTheProducts);
 
 router.get('/:name(fruits|herbs|drinks)', getProductsByCategory);
 

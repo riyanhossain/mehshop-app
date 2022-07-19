@@ -166,7 +166,7 @@ const userInfoUpdate = async (req, res) => {
   const { name, username, email, phone, address,id } = req.body;
   // const { id } = req.user.id;
   try {
-    const isUsernameExits = await userModel.findOne({ username });
+    const isUsernameExits = await userModel.findOne({ username }).select('-password -role');
     if (!isUsernameExits) {
       await userModel.findOneAndUpdate(
         { _id: id },
